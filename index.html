@@ -13,13 +13,13 @@ body{background:radial-gradient(circle at 12% 14%,#fff5c9 0 5%,transparent 24%),
 .choice{transition:transform .15s,border-color .15s}.choice:hover{transform:translateY(-2px)}
 .illustration{width:72px;height:72px;flex:none}.illustration.small{width:46px;height:46px}.hero{display:flex;align-items:center;gap:13px;margin-top:8px}.hero h1{margin:0}.decor-row{display:flex;justify-content:center;align-items:center;gap:13px;margin:10px 0 2px}.decor-star{width:22px;height:22px}.end-illustration{width:112px;height:112px;margin:0 auto}.tip-title{display:flex;justify-content:center;align-items:center;gap:7px}.tip-title svg{width:24px;height:24px}
 @media(max-width:430px){.illustration{width:54px;height:54px}.illustration.small{width:38px;height:38px}.hero{gap:8px}}
-.result-list{display:grid;gap:9px;margin-top:12px}.result-item{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:13px 15px;border-radius:14px;background:#f5f9ff;border:1px solid #dce8f8}.result-number{font-weight:800;min-width:88px}.result-status{font-weight:800}.result-detail{margin-left:auto;font-weight:750}.result-own{flex-basis:100%;font-size:13px;color:#72502b}.result-item.correct .result-status{color:#176a42}.result-item.incorrect{background:#fff8f0;border-color:#f2dec6}.result-item.incorrect .result-status{color:#9a4b15}@media(max-width:430px){.result-detail{margin-left:0;width:100%}}
+.result-list{display:grid;gap:9px;margin-top:12px}.result-item{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:13px 15px;border-radius:14px;background:#f5f9ff;border:1px solid #dce8f8}.result-number{font-weight:800;min-width:88px}.result-status{font-weight:800}.result-detail{margin-left:auto;font-weight:750}.result-own{flex-basis:100%;font-size:13px;color:#72502b}.result-item.correct .result-status{color:#176a42}.result-item.incorrect{background:#fff8f0;border-color:#f2dec6}.result-item.incorrect .result-status{color:#9a4b15}.result-item.unanswered{background:#f4f5f7;border-color:#dce1e8}.result-item.unanswered .result-status{color:#637184}@media(max-width:430px){.result-detail{margin-left:0;width:100%}}
 </style>
 </head>
 <body><main class="app" id="app" aria-live="polite"></main>
 <script>
 'use strict';
-// Alle Kinder erhalten dieselben zehn Aufgaben in derselben Reihenfolge.
+// Alle Kinder erhalten dieselben 20 Aufgaben in derselben Reihenfolge.
 const tasks=[
  {a:90,op:'−',b:30,small:'9 − 3 = ?'},
  {a:40,op:'+',b:20,small:'4 + 2 = ?'},
@@ -30,9 +30,29 @@ const tasks=[
  {a:60,op:'−',b:20,small:'6 − 2 = ?'},
  {a:20,op:'+',b:70,small:'2 + 7 = ?'},
  {a:100,op:'−',b:60,small:'10 − 6 = ?'},
- {a:40,op:'+',b:50,small:'4 + 5 = ?'}
+ {a:40,op:'+',b:50,small:'4 + 5 = ?'},
+ {a:70,op:'+',b:20,small:'7 + 2 = ?'},
+ {a:90,op:'−',b:50,small:'9 − 5 = ?'},
+ {a:30,op:'+',b:40,small:'3 + 4 = ?'},
+ {a:80,op:'−',b:20,small:'8 − 2 = ?'},
+ {a:20,op:'+',b:50,small:'2 + 5 = ?'},
+ {a:100,op:'−',b:30,small:'10 − 3 = ?'},
+ {a:60,op:'+',b:30,small:'6 + 3 = ?'},
+ {a:70,op:'−',b:50,small:'7 − 5 = ?'},
+ {a:40,op:'+',b:30,small:'4 + 3 = ?'},
+ {a:90,op:'−',b:70,small:'9 − 7 = ?'}
 ];
-let idx=0,tip=false,done=false,mode=null;const answers=[];
+let idx=0,tip=false,done=false,mode=null,finished=false,timedOut=false;
+let deadline=null,timerHandle=null;const DURATION=4*60*1000;const answers=[];
+function stopTimer(){if(timerHandle!==null){clearTimeout(timerHandle);timerHandle=null}}
+function finish(expired=false){
+ if(finished)return;
+ // Auch eine bereits eingetippte, aber noch nicht geprüfte Antwort bleibt unbearbeitet.
+ finished=true;timedOut=expired;stopTimer();idx=tasks.length;render();
+}
+function checkTime(){if(!finished&&deadline!==null&&Date.now()>=deadline){finish(true);return true}return false}
+function startTimer(){deadline=Date.now()+DURATION;timerHandle=setTimeout(()=>finish(true),DURATION)}
+
 const app=document.getElementById('app');
 // Eigene, direkt eingebettete Cliparts: keine Downloads, keine externen Quellen.
 const pencil=`<svg class="illustration" viewBox="0 0 90 90" role="img" aria-label="Bunter Bleistift"><g transform="rotate(32 45 45)"><rect x="31" y="13" width="28" height="56" rx="5" fill="#ffd76d" stroke="#b47e34" stroke-width="2"/><rect x="31" y="13" width="8" height="56" fill="#ffb5a8"/><rect x="50" y="13" width="9" height="56" fill="#8bd1e9"/><rect x="31" y="8" width="28" height="13" rx="5" fill="#f5a4b6" stroke="#b47e34" stroke-width="2"/><path d="M31 69L45 85 59 69Z" fill="#f5d2a6" stroke="#b47e34" stroke-width="2"/><path d="M40 80L45 85 50 80Z" fill="#53505a"/></g></svg>`;
@@ -41,22 +61,24 @@ const bulb=`<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3a10 10 0 0
 const trophy=`<svg class="end-illustration" viewBox="0 0 120 120" role="img" aria-label="Goldener Siegerpokal"><path d="M38 22h44v29c0 21-12 32-22 32S38 72 38 51z" fill="#ffd36d" stroke="#ba812b" stroke-width="3"/><path d="M38 30H23v13c0 14 10 20 23 20M82 30h15v13c0 14-10 20-23 20" fill="none" stroke="#d49a38" stroke-width="7" stroke-linejoin="round"/><path d="M60 83v14m-21 9h42" stroke="#ba812b" stroke-width="8" stroke-linecap="round"/><path d="M60 35l5 10 11 1.5-8 8 2 11-10-5-10 5 2-11-8-8 11-1.5z" fill="#fff5cc"/></svg>`;
 function solution(t){return t.op==='+'?t.a+t.b:t.a-t.b}
 function render(){
- if(mode===null){app.innerHTML=`<div class="eyebrow">Mathematik · 2. Klasse</div><div class="hero">${pencil}<h1>⚡ Kopfrechen-Challenge</h1></div><div class="decor-row">${star}${star}${star}</div><p class="muted">10 Aufgaben mit Zehnerzahlen. Wähle deine Variante:</p><div class="setup"><button class="choice" id="withTip"><strong>💡 Mit Tippfeld</strong><span>Du kannst dir bei jeder Aufgabe die kleine Rechnung anzeigen lassen.</span></button><button class="choice" id="withoutTip"><strong>🧠 Ohne Tippfeld</strong><span>Du rechnest alle Aufgaben ohne zusätzliche Hilfe.</span></button></div><div class="footer">Alle bearbeiten dieselben 10 Aufgaben.</div>`;document.getElementById('withTip').onclick=()=>{mode='tip';render()};document.getElementById('withoutTip').onclick=()=>{mode='no-tip';render()};return}
- if(idx>=tasks.length){
+ if(mode!==null&&!finished&&checkTime())return;
+ if(mode===null){app.innerHTML=`<div class="eyebrow">Mathematik · 2. Klasse</div><div class="hero">${pencil}<h1>⚡ Kopfrechen-Challenge</h1></div><div class="decor-row">${star}${star}${star}</div><p class="muted">20 Aufgaben mit Zehnerzahlen. Wähle deine Variante:</p><div class="setup"><button class="choice" id="withTip"><strong>💡 Mit Tippfeld</strong><span>Du kannst dir bei jeder Aufgabe die kleine Rechnung anzeigen lassen.</span></button><button class="choice" id="withoutTip"><strong>🧠 Ohne Tippfeld</strong><span>Du rechnest alle Aufgaben ohne zusätzliche Hilfe.</span></button></div><div class="footer">Alle bearbeiten dieselben 20 Aufgaben.</div>`;document.getElementById('withTip').onclick=()=>{mode='tip';startTimer();render()};document.getElementById('withoutTip').onclick=()=>{mode='no-tip';startTimer();render()};return}
+ if(finished||idx>=tasks.length){
+   if(!finished){finished=true;stopTimer()}
   const score=answers.filter(a=>a.correct).length;
   const rows=tasks.map((t,i)=>{
    const a=answers[i];
    return `<div class="result-item ${a.correct?'correct':'incorrect'}"><span class="result-number">Aufgabe ${i+1}</span><span class="result-status">${a.correct?'✓ Richtig':'✗ Falsch'}</span><span class="result-detail">${t.a} ${t.op} ${t.b} = ${solution(t)}</span>${a.correct?'':`<span class="result-own">Deine Antwort: ${a.value}</span>`}</div>`;
   }).join('');
-  app.innerHTML=`<div class="eyebrow">Geschafft!</div><section class="end">${trophy}<h2>Super gemacht! 🎉</h2><p>Du hast alle 10 Aufgaben bearbeitet.</p><div class="result-summary">${score} von 10 Aufgaben richtig</div><p>Deine Endkontrolle:</p></section><div class="result-list">${rows}</div><button class="primary" id="again" style="width:100%;margin-top:20px">Noch einmal spielen</button><div class="footer">Kopfrechen-Challenge · Zahlenraum bis 100</div>`;
-  document.getElementById('again').onclick=()=>{idx=0;answers.length=0;tip=false;done=false;mode=null;render()};return
+  app.innerHTML=`<div class="eyebrow">Geschafft!</div><section class="end">${trophy}<h2>Super gemacht! 🎉</h2><p>${timedOut?'Die 4 Minuten sind vorbei!':'Du hast alle Aufgaben bearbeitet!'}</p><div class="result-summary">${score} von ${tasks.length} Aufgaben richtig</div><p>${answers.filter(Boolean).length} bearbeitet · ${tasks.length-answers.filter(Boolean).length} offen</p><p>Deine Endkontrolle:</p></section><div class="result-list">${rows}</div><button class="primary" id="again" style="width:100%;margin-top:20px">Noch einmal spielen</button><div class="footer">Kopfrechen-Challenge · Zahlenraum bis 100</div>`;
+  document.getElementById('again').onclick=()=>{stopTimer();idx=0;answers.length=0;tip=false;done=false;mode=null;finished=false;timedOut=false;deadline=null;render()};return
  }
 
  const t=tasks[idx];const result=answers[idx];app.innerHTML=`<div class="top"><div><div class="eyebrow">Mathematik · Zehnerzahlen</div><div class="hero">${pencil}<h1>⚡ Kopfrechen-Challenge</h1></div></div><div class="count">${idx+1} / ${tasks.length}</div></div><div class="progress" aria-label="Fortschritt"><div style="width:${idx/tasks.length*100}%"></div></div><div class="question" aria-label="Rechenaufgabe">${t.a} ${t.op} ${t.b} = ?</div>${mode==='tip'&&!done?`<div class="actions"><button type="button" class="secondary" id="tipBtn" aria-expanded="${tip}">💡 ${tip?'Tipp ausblenden':'Tipp anzeigen'}</button></div>`:''}${tip?`<div class="tip" id="tip"><div class="tip-title">${bulb}<span>Deine kleine Aufgabe:</span></div><strong>${t.small}</strong><p>Überlege: Wie hilft dir das bei den Zehnern?</p></div>`:''}<label for="answer" style="display:block;margin-top:20px;font-weight:800">Dein Ergebnis:</label><form class="answer" id="form"><input id="answer" type="number" min="0" max="100" step="10" inputmode="numeric" autocomplete="off" ${done?'disabled':''} aria-label="Ergebnis eingeben" required><button class="primary" id="check" type="submit" ${done?'disabled':''}>Prüfen</button></form><div class="feedback" id="feedback" role="status">${done?`<span class="${result.correct?'good':'retry'}">${result.correct?'✓ Richtig gerechnet!':'✗ Noch nicht richtig.'}</span><div class="solution-line">Die richtige Zahl ist: ${solution(t)}</div>`:''}</div>${done?'<div class="actions"><button class="primary" id="next">'+(idx===tasks.length-1?'Meine Ergebnisse ansehen':'Nächste Aufgabe →')+'</button></div>':''}<div class="footer">${mode==='tip'?'Du kannst dir bei Bedarf einen Tipp holen. 🌟':'Du rechnest selbstständig. Viel Erfolg! 🌟'}</div>`;
  if(done)document.getElementById('answer').value=result.value;
  if(mode==='tip'&&!done)document.getElementById('tipBtn').onclick=()=>{const current=document.getElementById('answer')?.value||'';tip=!tip;render();const input=document.getElementById('answer');if(input)input.value=current};
- if(!done)document.getElementById('form').onsubmit=e=>{e.preventDefault();const input=document.getElementById('answer');if(input.value.trim()==='')return;const value=Number(input.value);answers[idx]={value,correct:value===solution(t)};done=true;render()};
- if(done)document.getElementById('next').onclick=()=>{idx++;tip=false;done=false;render()};
+ if(!done)document.getElementById('form').onsubmit=e=>{e.preventDefault();const input=document.getElementById('answer');if(checkTime())return;if(input.value.trim()==='')return;const value=Number(input.value);answers[idx]={value,correct:value===solution(t)};done=true;render()};
+ if(done)document.getElementById('next').onclick=()=>{if(checkTime())return;idx++;tip=false;done=false;if(idx>=tasks.length)finish(false);else render()};
 }
 render();
 </script></body></html>
