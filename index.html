@@ -19,39 +19,30 @@ body{background:radial-gradient(circle at 12% 14%,#fff5c9 0 5%,transparent 24%),
 <body><main class="app" id="app" aria-live="polite"></main>
 <script>
 'use strict';
-// Alle Kinder erhalten dieselben 30 Aufgaben in derselben Reihenfolge.
+// Alle Kinder erhalten dieselben 40 Aufgaben in derselben Reihenfolge.
+// gap: "result" (Ergebnis), "left" (erste Zahl), "right" (zweite Zahl)
 const tasks=[
- {a:90,op:'−',b:30,small:'9 − 3 = ?'},
- {a:40,op:'+',b:20,small:'4 + 2 = ?'},
- {a:80,op:'−',b:50,small:'8 − 5 = ?'},
- {a:30,op:'+',b:60,small:'3 + 6 = ?'},
- {a:70,op:'−',b:40,small:'7 − 4 = ?'},
- {a:50,op:'+',b:30,small:'5 + 3 = ?'},
- {a:60,op:'−',b:20,small:'6 − 2 = ?'},
- {a:20,op:'+',b:70,small:'2 + 7 = ?'},
- {a:100,op:'−',b:60,small:'10 − 6 = ?'},
- {a:40,op:'+',b:50,small:'4 + 5 = ?'},
- {a:20,op:'+',b:30,small:'2 + 3 = ?'},
- {a:90,op:'−',b:50,small:'9 − 5 = ?'},
- {a:60,op:'+',b:10,small:'6 + 1 = ?'},
- {a:80,op:'−',b:30,small:'8 − 3 = ?'},
- {a:40,op:'+',b:40,small:'4 + 4 = ?'},
- {a:100,op:'−',b:20,small:'10 − 2 = ?'},
- {a:10,op:'+',b:60,small:'1 + 6 = ?'},
- {a:70,op:'−',b:20,small:'7 − 2 = ?'},
- {a:30,op:'+',b:50,small:'3 + 5 = ?'},
- {a:90,op:'−',b:70,small:'9 − 7 = ?'},
- {a:20,op:'+',b:50,small:'2 + 5 = ?'},
- {a:60,op:'−',b:40,small:'6 − 4 = ?'},
- {a:50,op:'+',b:40,small:'5 + 4 = ?'},
- {a:100,op:'−',b:30,small:'10 − 3 = ?'},
- {a:10,op:'+',b:80,small:'1 + 8 = ?'},
- {a:80,op:'−',b:60,small:'8 − 6 = ?'},
- {a:30,op:'+',b:40,small:'3 + 4 = ?'},
- {a:70,op:'−',b:50,small:'7 − 5 = ?'},
- {a:20,op:'+',b:60,small:'2 + 6 = ?'},
- {a:100,op:'−',b:90,small:'10 − 9 = ?'}
-];
+ {a:90,op:'−',b:30},{a:40,op:'+',b:20},
+ {a:20,op:'+',b:20,gap:'right'},{a:80,op:'−',b:50},
+ {a:40,op:'+',b:30,gap:'left'},{a:30,op:'+',b:60},
+ {a:70,op:'−',b:40},{a:50,op:'+',b:30},
+ {a:60,op:'−',b:20,gap:'right'},{a:20,op:'+',b:70},
+ {a:100,op:'−',b:60},{a:40,op:'+',b:50},
+ {a:30,op:'+',b:40,gap:'left'},{a:20,op:'+',b:30},
+ {a:90,op:'−',b:50},{a:60,op:'+',b:10},
+ {a:80,op:'−',b:30,gap:'right'},{a:40,op:'+',b:40},
+ {a:100,op:'−',b:20},{a:10,op:'+',b:60},
+ {a:70,op:'−',b:20,gap:'left'},{a:30,op:'+',b:50},
+ {a:90,op:'−',b:70},{a:20,op:'+',b:50},
+ {a:50,op:'+',b:20,gap:'right'},{a:60,op:'−',b:40},
+ {a:50,op:'+',b:40},{a:100,op:'−',b:30},
+ {a:10,op:'+',b:80},{a:80,op:'−',b:60},
+ {a:20,op:'+',b:50,gap:'left'},{a:30,op:'+',b:40},
+ {a:70,op:'−',b:50},{a:20,op:'+',b:60},
+ {a:100,op:'−',b:90},{a:90,op:'−',b:30,gap:'right'},
+ {a:40,op:'+',b:50,gap:'left'},{a:100,op:'−',b:40,gap:'right'},
+ {a:20,op:'+',b:60,gap:'left'},{a:70,op:'−',b:40,gap:'right'}
+].map(t=>({...t,gap:t.gap||'result'}));
 let idx=0,tip=false,done=false,mode=null,finishedByTime=false,deadline=null,timerId=null;const answers=[];
 const DURATION_MS=4*60*1000;
 function startGame(selectedMode){mode=selectedMode;deadline=Date.now()+DURATION_MS;finishedByTime=false;timerId=setInterval(tick,250);render();tick()}
@@ -62,21 +53,30 @@ const pencil=`<svg class="illustration" viewBox="0 0 90 90" role="img" aria-labe
 const star=`<svg class="decor-star" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2l4.3 9 9.8 1.4-7.1 6.9 1.7 9.7L16 24.4 7.3 29l1.7-9.7-7.1-6.9 9.8-1.4z" fill="#f7c85a" stroke="#dfa33b" stroke-width="1.5"/></svg>`;
 const bulb=`<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3a10 10 0 0 0-6 18c1.5 1.2 2 2.7 2 4h8c0-1.3.5-2.8 2-4a10 10 0 0 0-6-18z" fill="#ffe17e" stroke="#d49a26" stroke-width="2"/><path d="M12 27h8m-7 3h6" stroke="#62738b" stroke-width="2.5" stroke-linecap="round"/></svg>`;
 const trophy=`<svg class="end-illustration" viewBox="0 0 120 120" role="img" aria-label="Goldener Siegerpokal"><path d="M38 22h44v29c0 21-12 32-22 32S38 72 38 51z" fill="#ffd36d" stroke="#ba812b" stroke-width="3"/><path d="M38 30H23v13c0 14 10 20 23 20M82 30h15v13c0 14-10 20-23 20" fill="none" stroke="#d49a38" stroke-width="7" stroke-linejoin="round"/><path d="M60 83v14m-21 9h42" stroke="#ba812b" stroke-width="8" stroke-linecap="round"/><path d="M60 35l5 10 11 1.5-8 8 2 11-10-5-10 5 2-11-8-8 11-1.5z" fill="#fff5cc"/></svg>`;
-function solution(t){return t.op==='+'?t.a+t.b:t.a-t.b}
+function result(t){return t.op==='+'?t.a+t.b:t.a-t.b}
+function solution(t){return t.gap==='left'?t.a:t.gap==='right'?t.b:result(t)}
+function expression(t,showSolution=false){
+ const value=(part,n)=>t.gap===part?(showSolution?n:'___'):n;
+ return `${value('left',t.a)} ${t.op} ${value('right',t.b)} = ${value('result',result(t))}`;
+}
+function smallTip(t){
+ const small={...t,a:t.a/10,b:t.b/10};
+ return expression(small,false).replaceAll('___','?');
+}
 function render(){
- if(mode===null){app.innerHTML=`<div class="eyebrow">Mathematik · 2. Klasse</div><div class="hero">${pencil}<h1>⚡ Kopfrechen-Challenge</h1></div><div class="decor-row">${star}${star}${star}</div><p class="muted">30 Aufgaben mit Zehnerzahlen. Du hast 4 Minuten Zeit. Wähle deine Variante:</p><div class="setup"><button class="choice" id="withTip"><strong>💡 Mit Tippfeld</strong><span>Du kannst dir bei jeder Aufgabe die kleine Rechnung anzeigen lassen.</span></button><button class="choice" id="withoutTip"><strong>🧠 Ohne Tippfeld</strong><span>Du rechnest alle Aufgaben ohne zusätzliche Hilfe.</span></button></div><div class="footer">Alle bearbeiten dieselben 30 Aufgaben.</div>`;document.getElementById('withTip').onclick=()=>{startGame('tip')};document.getElementById('withoutTip').onclick=()=>{startGame('no-tip')};return}
+ if(mode===null){app.innerHTML=`<div class="eyebrow">Mathematik · 2. Klasse</div><div class="hero">${pencil}<h1>⚡ Kopfrechen-Challenge</h1></div><div class="decor-row">${star}${star}${star}</div><p class="muted">40 Aufgaben mit Zehnerzahlen. Du hast 4 Minuten Zeit. Wähle deine Variante:</p><div class="setup"><button class="choice" id="withTip"><strong>💡 Mit Tippfeld</strong><span>Du kannst dir bei jeder Aufgabe die kleine Rechnung anzeigen lassen.</span></button><button class="choice" id="withoutTip"><strong>🧠 Ohne Tippfeld</strong><span>Du rechnest alle Aufgaben ohne zusätzliche Hilfe.</span></button></div><div class="footer">Alle bearbeiten dieselben 40 Aufgaben.</div>`;document.getElementById('withTip').onclick=()=>{startGame('tip')};document.getElementById('withoutTip').onclick=()=>{startGame('no-tip')};return}
  if(idx>=tasks.length){
   const score=answers.filter(a=>a.correct).length;
   const rows=tasks.map((t,i)=>{
    const a=answers[i];
-   if(!a)return `<div class="result-item"><span class="result-number">Aufgabe ${i+1}</span><span class="result-status">– Nicht bearbeitet</span><span class="result-detail">${t.a} ${t.op} ${t.b} = ${solution(t)}</span></div>`;
-   return `<div class="result-item ${a.correct?'correct':'incorrect'}"><span class="result-number">Aufgabe ${i+1}</span><span class="result-status">${a.correct?'✓ Richtig':'✗ Falsch'}</span><span class="result-detail">${t.a} ${t.op} ${t.b} = ${solution(t)}</span>${a.correct?'':`<span class="result-own">Deine Antwort: ${a.value}</span>`}</div>`;
+   if(!a)return `<div class="result-item"><span class="result-number">Aufgabe ${i+1}</span><span class="result-status">– Nicht bearbeitet</span><span class="result-detail">${expression(t,true)}</span></div>`;
+   return `<div class="result-item ${a.correct?'correct':'incorrect'}"><span class="result-number">Aufgabe ${i+1}</span><span class="result-status">${a.correct?'✓ Richtig':'✗ Falsch'}</span><span class="result-detail">${expression(t,true)}</span>${a.correct?'':`<span class="result-own">Deine Antwort: ${a.value}</span>`}</div>`;
   }).join('');
-  app.innerHTML=`<div class="eyebrow">Endkontrolle</div><section class="end">${trophy}<h2>${finishedByTime?"Die 4 Minuten sind um! ⏱":"Super gemacht! 🎉"}</h2><p>${finishedByTime?"Hier siehst du alle Ergebnisse, auch die noch nicht bearbeiteten Aufgaben.":"Du hast alle 30 Aufgaben bearbeitet."}</p><div class="result-summary">${score} von ${tasks.length} Aufgaben richtig</div><p>Deine Endkontrolle:</p></section><div class="result-list">${rows}</div><button class="primary" id="again" style="width:100%;margin-top:20px">Noch einmal spielen</button><div class="footer">Kopfrechen-Challenge · Zahlenraum bis 100</div>`;
+  app.innerHTML=`<div class="eyebrow">Endkontrolle</div><section class="end">${trophy}<h2>${finishedByTime?"Die 4 Minuten sind um! ⏱":"Super gemacht! 🎉"}</h2><p>${finishedByTime?"Hier siehst du alle Ergebnisse, auch die noch nicht bearbeiteten Aufgaben.":"Du hast alle 40 Aufgaben bearbeitet."}</p><div class="result-summary">${score} von ${tasks.length} Aufgaben richtig</div><p>Deine Endkontrolle:</p></section><div class="result-list">${rows}</div><button class="primary" id="again" style="width:100%;margin-top:20px">Noch einmal spielen</button><div class="footer">Kopfrechen-Challenge · Zahlenraum bis 100</div>`;
   document.getElementById('again').onclick=()=>{if(timerId)clearInterval(timerId);timerId=null;deadline=null;finishedByTime=false;idx=0;answers.length=0;tip=false;done=false;mode=null;render()};return
  }
 
- const t=tasks[idx];const result=answers[idx];app.innerHTML=`<div class="top"><div><div class="eyebrow">Mathematik · Zehnerzahlen</div><div class="hero">${pencil}<h1>⚡ Kopfrechen-Challenge</h1></div></div><div class="count">${idx+1} / ${tasks.length} · <span id="clock">⏱ 4:00</span></div></div><div class="progress" aria-label="Fortschritt"><div style="width:${idx/tasks.length*100}%"></div></div><div class="question" aria-label="Rechenaufgabe">${t.a} ${t.op} ${t.b} = ?</div>${mode==='tip'&&!done?`<div class="actions"><button type="button" class="secondary" id="tipBtn" aria-expanded="${tip}">💡 ${tip?'Tipp ausblenden':'Tipp anzeigen'}</button></div>`:''}${tip?`<div class="tip" id="tip"><div class="tip-title">${bulb}<span>Deine kleine Aufgabe:</span></div><strong>${t.small}</strong><p>Überlege: Wie hilft dir das bei den Zehnern?</p></div>`:''}<label for="answer" style="display:block;margin-top:20px;font-weight:800">Dein Ergebnis:</label><form class="answer" id="form"><input id="answer" type="number" min="0" max="100" step="10" inputmode="numeric" autocomplete="off" ${done?'disabled':''} aria-label="Ergebnis eingeben" required><button class="primary" id="check" type="submit" ${done?'disabled':''}>Prüfen</button></form><div class="feedback" id="feedback" role="status">${done?`<span class="${result.correct?'good':'retry'}">${result.correct?'✓ Richtig gerechnet!':'✗ Noch nicht richtig.'}</span><div class="solution-line">Die richtige Zahl ist: ${solution(t)}</div>`:''}</div>${done?'<div class="actions"><button class="primary" id="next">'+(idx===tasks.length-1?'Meine Ergebnisse ansehen':'Nächste Aufgabe →')+'</button></div>':''}<div class="footer">${mode==='tip'?'Du kannst dir bei Bedarf einen Tipp holen. 🌟':'Du rechnest selbstständig. Viel Erfolg! 🌟'}</div>`;
+ const t=tasks[idx];const result=answers[idx];app.innerHTML=`<div class="top"><div><div class="eyebrow">Mathematik · Zehnerzahlen</div><div class="hero">${pencil}<h1>⚡ Kopfrechen-Challenge</h1></div></div><div class="count">${idx+1} / ${tasks.length} · <span id="clock">⏱ 4:00</span></div></div><div class="progress" aria-label="Fortschritt"><div style="width:${idx/tasks.length*100}%"></div></div><div class="question" aria-label="Rechenaufgabe">${expression(t)}</div>${mode==='tip'&&!done?`<div class="actions"><button type="button" class="secondary" id="tipBtn" aria-expanded="${tip}">💡 ${tip?'Tipp ausblenden':'Tipp anzeigen'}</button></div>`:''}${tip?`<div class="tip" id="tip"><div class="tip-title">${bulb}<span>Deine kleine Aufgabe:</span></div><strong>${smallTip(t)}</strong><p>Überlege: Wie hilft dir das bei den Zehnern?</p></div>`:''}<label for="answer" style="display:block;margin-top:20px;font-weight:800">Deine Antwort (fehlende Zahl):</label><form class="answer" id="form"><input id="answer" type="number" min="0" max="100" step="10" inputmode="numeric" autocomplete="off" ${done?'disabled':''} aria-label="Fehlende Zahl eingeben" required><button class="primary" id="check" type="submit" ${done?'disabled':''}>Prüfen</button></form><div class="feedback" id="feedback" role="status">${done?`<span class="${result.correct?'good':'retry'}">${result.correct?'✓ Richtig gerechnet!':'✗ Noch nicht richtig.'}</span><div class="solution-line">Die fehlende Zahl ist: ${solution(t)}</div>`:''}</div>${done?'<div class="actions"><button class="primary" id="next">'+(idx===tasks.length-1?'Meine Ergebnisse ansehen':'Nächste Aufgabe →')+'</button></div>':''}<div class="footer">${mode==='tip'?'Du kannst dir bei Bedarf einen Tipp holen. 🌟':'Du rechnest selbstständig. Viel Erfolg! 🌟'}</div>`;
  if(done)document.getElementById('answer').value=result.value;
  if(mode==='tip'&&!done)document.getElementById('tipBtn').onclick=()=>{const current=document.getElementById('answer')?.value||'';tip=!tip;render();const input=document.getElementById('answer');if(input)input.value=current};
  if(!done)document.getElementById('form').onsubmit=e=>{e.preventDefault();if(deadline===null||Date.now()>=deadline){tick();return;}const input=document.getElementById('answer');if(input.value.trim()==='')return;const value=Number(input.value);answers[idx]={value,correct:value===solution(t)};done=true;render()};
